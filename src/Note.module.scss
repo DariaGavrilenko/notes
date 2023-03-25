@@ -1,0 +1,46 @@
+@import './constants.scss';
+
+.note {
+    width: 100%;
+    border: $border;
+    border-radius: $borderRadius;
+    padding: 10px;
+    box-sizing: border-box;
+    margin: 10px 0 10px 10px;
+    position: relative;
+
+    .note__buttons {
+        display: flex;
+        justify-content: end;
+        align-items: center;
+
+        .note__button {
+            border: none;
+            background-color: transparent;
+            cursor: pointer;
+
+            .note__icon {
+                width: 15px;
+                height: 15px;
+            }
+        }
+    }
+}
+  
+.note__text{
+    padding: 10px 30px;
+}
+
+.note__textarea {
+    position: absolute;
+    resize: none;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    border: none;
+    padding: 30px;
+    box-sizing: border-box;
+    border-radius: 8px;
+    font-size: large;
+}
