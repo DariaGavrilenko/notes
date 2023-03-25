@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect} from 'react';
 import './App.css';
 import Note from './Note';
 import NoteList from './NoteList';
@@ -16,15 +16,12 @@ export type notesType = {
 // } 
 
 function App() {
-debugger
   const [editMode, setEditMode] = useState<boolean>(false)
   const [notes, setNotes] = useState<notesType[] | null>(null)
   const [requiredId, setRequiredId] = useState<number>(0)
   //const [data, setData] = useState<DataType | null> (null)
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const notNullNotes = notes ? notes : []
-
-  //console.log(requiredId);
 
 
   useEffect(() => {
@@ -33,7 +30,6 @@ debugger
       const nextNotes = actualNotes ? JSON.parse(actualNotes) : []
       setNotes(nextNotes)
       setRequiredId(nextNotes[0]?.id)
-
     } else {
       const value = JSON.stringify(notes)
       localStorage.setItem('notes', value)
@@ -85,12 +81,14 @@ debugger
   }
 
   const deleteNote = (id: number) => {
-    debugger
 
     const index = notNullNotes.findIndex(el => el.id === id)
     const test  = notNullNotes[index + 1] ? notNullNotes[index + 1].id : notNullNotes[0].id
+    const nextNotes = notNullNotes.filter(el => el.id !== id)
+
+
      setRequiredId(test)
-     setNotes(notNullNotes.filter(el => el.id !== id))
+     setNotes(nextNotes)
     // if(data){
     //   setData({...data, notes:notNullNotes.filter(el => el.id !== id), requiredId:test})
     // }   
