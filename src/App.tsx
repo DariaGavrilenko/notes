@@ -1,119 +1,99 @@
 import React, { useState, useEffect} from 'react';
-import './App.css';
+import Select, { MultiValue } from 'react-select'
+
 import Note from './Note';
+import Button from './Button';
 import NoteList from './NoteList';
-import Select from 'react-select'
+
+import s from './App.module.scss';
+import { v1 } from 'uuid';
 
 export type notesType = {
-  id: number
+  id: string
   text: string
   tags: any[]
 }
 
-// export type DataType = {
-//   notes: notesType[]
-//   requiredId: number
-// } 
-
-function App() {
-  const [editMode, setEditMode] = useState<boolean>(false)
-  const [notes, setNotes] = useState<notesType[] | null>(null)
-  const [requiredId, setRequiredId] = useState<number>(0)
-  //const [data, setData] = useState<DataType | null> (null)
-  const [selectedTags, setSelectedTags] = useState<string[]>([])
-  const notNullNotes = notes ? notes : []
-
-
-  useEffect(() => {
-    if (!notes) {
-      const actualNotes = localStorage.getItem('notes')
-      const nextNotes = actualNotes ? JSON.parse(actualNotes) : []
-      setNotes(nextNotes)
-      setRequiredId(nextNotes[0]?.id)
-    } else {
-      const value = JSON.stringify(notes)
-      localStorage.setItem('notes', value)
-    }
-
-  }, [notes])
-
-  //   useEffect(() => {
-  //   if (!data) {
-  //     const actualNotes = localStorage.getItem('notes')
-  //     const nextNotes = actualNotes ? JSON.parse(actualNotes) : {}
-  //     setData(nextNotes)
-  //     //setRequiredId(nextNotes[0]?.id)
-
-  //   } else {
-  //     const value = JSON.stringify(data)
-  //     localStorage.setItem('notes', value)
-  //   }
-
-  // }, [data])
-
-  // get array of all tags 
-  const allTags = notNullNotes.map(item => item.tags).reduce((arr, item) => {
+const getUniqTags = (notes: notesType[]) => {
+  // get array of all tags
+  const allTags = notes.map(item => item.tags).reduce((arr, item) => {
     return arr.concat(item)
   }, [])
 
   // get array uniq tags without '#' symbol
-  const uniqTags = [...new Set(allTags)].map(el => ({ label: el.replace('#', ''), value: el.replace('#', '') }))
+  return [...new Set(allTags)].map(el => ({ label: el.replace('#', ''), value: el.replace('#', '') }))
+}
+
+const getSortedNotesByTags = (tagsList: string[], notes: notesType[]) => {
+ return tagsList.length 
+  ? notes.filter(el => {
+    return el.tags.some(tag => tagsList.some(item => `#${item}` === tag))
+  })
+  : notes;
+}
+
+const App = () => {
+  const [editMode, setEditMode] = useState<boolean>(false)
+  const [notes, setNotes] = useState<notesType[]>([])
+  const [activeNoteId, setActiveNoteId] = useState<string>('0') 
+  const [tagsList, setTagsList] = useState<string[]>([]) 
 
   //find chosen note 
-  const chosenNote = notNullNotes.find(el => el.id === requiredId)
- // const chosenNote = notNullNotes.find(el => el.id === data?.requiredId)
+  const activeNote = notes.find(el => el.id === activeNoteId) 
 
-  //Sort notes by tags
-  const sortedNotes = selectedTags.length !== 0
-    ? notNullNotes.filter(el => {
-      return el.tags.some(tag => selectedTags.some(item => `#${item}` === tag))
-    })
-    : notNullNotes;
+  const uniqTags = getUniqTags(notes)
 
-  //CRUD operations
-  const editNoteText = (newText: string, id: number | undefined) => {
-    let answer = Array.from(newText.matchAll(/\#[а-яА-яa-zA-Z0-9_]*/gm)).map(el => el[0])
-    setNotes(notNullNotes.map(el => el.id === id ? { ...el, text: newText ? newText : 'empty note', tags: answer } : el))
-// if(data){
-//   setData({...data, notes:notNullNotes.map(el => el.id === id ? { ...el, text: newText ? newText : 'empty note', tags: answer } : el)})
-// }
+  useEffect(() => {
+    if (!notes.length) {
+      const actualNotes = localStorage.getItem('notes')
+      const nextNotes = actualNotes ? JSON.parse(actualNotes) : []
+      nextNotes.length && setNotes(nextNotes)
+      nextNotes.length && setActiveNoteId(nextNotes[0]?.id)
+    } else {
+      const value = JSON.stringify(notes)
+      localStorage.setItem('notes', value)
+    }
+  }, [notes])
 
+  const onEditNoteClick = () => setEditMode(true)
+
+  const onNoteBlur = (newText: string, id: string| undefined)=>{
+    const answer = Array.from(newText.matchAll(/\#[а-яА-яa-zA-Z0-9_]*/gm)).map(el => el[0])
+    setNotes(notes.map(el => el.id === id ? { ...el, text: newText ? newText : 'empty note', tags: answer } : el))
+    setEditMode(false)
   }
 
-  const deleteNote = (id: number) => {
+  const onDeleteNoteClick = (id: string) => {
+    const index = notes.findIndex(el => el.id === id)
+    const nextId  = notes[index + 1] ? notes[index + 1].id : notes[0].id
+    const nextNotes = notes.filter(el => el.id !== id)
+debugger
+    if(!nextNotes.length){
+      localStorage.removeItem('notes')
+    }
 
-    const index = notNullNotes.findIndex(el => el.id === id)
-    const test  = notNullNotes[index + 1] ? notNullNotes[index + 1].id : notNullNotes[0].id
-    const nextNotes = notNullNotes.filter(el => el.id !== id)
-
-
-     setRequiredId(test)
-     setNotes(nextNotes)
-    // if(data){
-    //   setData({...data, notes:notNullNotes.filter(el => el.id !== id), requiredId:test})
-    // }   
+    setActiveNoteId(nextId)
+    setNotes(nextNotes)
   }
 
-  const addNote = () => {
-    const id = Math.random() * 6
-     setNotes([{ id: id, text: '', tags: [] }, ...notNullNotes])
-     setRequiredId(id)
-    // if(data){
-    //   setData({...data, notes:[{ id: id, text: '', tags: [] }, ...notNullNotes], requiredId:id})
-    // }
+  const onAddNoteClick = () => {
+    const id = v1()
+    setNotes([{ id: id, text: '', tags: [] }, ...notes])
+    setActiveNoteId(id)
     setEditMode(true)
   }
 
-  // const setRequiredId = (id:number) => {
-  //   if(data){
-  //     setData({...data, requiredId:id})
-  //   }
-  // }
+  const onSelectNoteClick = (id: string)=>{
+    setActiveNoteId(id)
+  }
 
+  const onSelectChange = (selectedOptions: MultiValue<{ label: any; value: any; }>) =>{
+    setTagsList(selectedOptions.map(el => el.value))
+  }
 
 
   return (
-    <div className="App">
+    <div className={s.App}>
       <Select
         styles={{
           control: (baseStyles, state) => ({
@@ -122,25 +102,26 @@ function App() {
             borderRadius:'8px'
           }),
         }}
-        defaultValue={[uniqTags[0], uniqTags[1]]}
         isMulti
         name="colors"
         options={uniqTags}
-        // unstyled
-        className="basic-multi-select"
-        onChange={(selectedOptions) => setSelectedTags(selectedOptions.map(el => el.value))}
+        onChange={onSelectChange}
       />
-      <div className="notesContainer">
-        <NoteList data={sortedNotes}
-          setRequiredId={setRequiredId}
-          deleteNote={deleteNote}
-          addNote={addNote} />
-        <Note note={chosenNote}
-          deleteNote={deleteNote}
-          editNoteText={editNoteText}
+    {notes.length ?   <div className={s.notesContainer}>
+        <NoteList 
+          data={getSortedNotesByTags(tagsList, notes)}
+          onAddNoteClick={onAddNoteClick} 
+          onSelectNoteClick={onSelectNoteClick}
+          onDeleteNoteClick={onDeleteNoteClick}
+        />
+        <Note 
           editMode={editMode}
-          setEditMode={setEditMode} />
-      </div>
+          note={activeNote}
+          onEditNoteClick={onEditNoteClick} 
+          onNoteBlur={onNoteBlur}
+          onDeleteNoteClick={onDeleteNoteClick}
+        />
+      </div> : <Button onClickHandler={onAddNoteClick} className={s.button}>Add note</Button>}
     </div>
   );
 }
