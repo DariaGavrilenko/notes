@@ -38,7 +38,6 @@ const App = () => {
   const [activeNoteId, setActiveNoteId] = useState<string>('0') 
   const [tagsList, setTagsList] = useState<string[]>([]) 
 
-  //find chosen note 
   const activeNote = notes.find(el => el.id === activeNoteId) 
 
   const uniqTags = getUniqTags(notes)
